@@ -1,0 +1,153 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Уличный гонщик</title>
+<style>
+body {
+  margin: 0;
+  background: #222;
+  color: white;
+  text-align: center;
+  font-family: Arial;
+}
+h1 { color: #ffd43b; }
+canvas {
+  background: #555;
+  border: 4px solid white;
+  width: min(95vw, 360px);
+  height: auto;
+}
+button {
+  padding: 12px 25px;
+  margin: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #ffd43b;
+  font-size: 20px;
+}
+</style>
+</head>
+<body>
+<h1>🏎️ УЛИЧНЫЙ ГОНЩИК</h1>
+<h2>Очки: <span id="score">0</span></h2>
+<canvas id="game" width="360" height="550"></canvas>
+<br>
+<button onclick="left()">⬅️</button>
+<button onclick="right()">➡️</button>
+<br>
+<button onclick="start()">Начать игру</button>
+<p>Управление: стрелки или A / D</p>
+
+<script>
+const c = document.getElementById("game");
+const ctx = c.getContext("2d");
+
+let car, enemies, score, speed, over, running;
+let leftKey = false, rightKey = false;
+let roadLine = 0;
+
+function start() {
+  car = {x:155, y:450, w:45, h:75};
+  enemies = [];
+  score = 0;
+  speed = 4;
+  over = false;
+  running = true;
+  requestAnimationFrame(loop);
+}
+
+function left() { car.x = Math.max(45,car.x-65); }
+function right() { car.x = Math.min(270,car.x+65); }
+
+document.addEventListener("keydown",e=>{
+  if(!running) return;
+  if(e.key==="ArrowLeft" || e.key.toLowerCase()==="a") left();
+  if(e.key==="ArrowRight" || e.key.toLowerCase()==="d") right();
+});
+
+function spawn() {
+  const lanes = [55,155,255];
+  enemies.push({
+    x:lanes[Math.floor(Math.random()*3)],
+    y:-90
+  });
+}
+
+function drawCar(x,y,color) {
+  ctx.fillStyle=color;
+  ctx.fillRect(x,y,45,75);
+  ctx.fillStyle="#111";
+  ctx.fillRect(x+5,y+12,35,20);
+  ctx.fillRect(x+5,y+48,35,15);
+  ctx.fillStyle="#ffe66d";
+  ctx.fillRect(x+3,y+3,9,7);
+  ctx.fillRect(x+33,y+3,9,7);
+}
+
+function loop() {
+  if(!running) return;
+
+  ctx.fillStyle="#333";
+  ctx.fillRect(0,0,360,550);
+
+  ctx.fillStyle="#228b22";
+  ctx.fillRect(0,0,30,550);
+  ctx.fillRect(330,0,30,550);
+
+  ctx.strokeStyle="white";
+  ctx.lineWidth=4;
+  ctx.setLineDash([30,25]);
+  ctx.lineDashOffset=-roadLine;
+  ctx.beginPath();
+  ctx.moveTo(130,0);
+  ctx.lineTo(130,550);
+  ctx.moveTo(230,0);
+  ctx.lineTo(230,550);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  roadLine+=speed;
+
+  if(Math.random()<0.025) spawn();
+
+  drawCar(car.x,car.y,"#e53935");
+
+  for(let e of enemies) {
+    e.y+=speed;
+    drawCar(e.x,e.y,"#2196f3");
+
+    if(car.x<e.x+45 && car.x+45>e.x &&
+       car.y<e.y+75 && car.y+75>e.y) {
+      running=false;
+      over=true;
+    }
+  }
+
+  enemies=enemies.filter(e=>e.y<570);
+
+  score++;
+  speed=4+score/500;
+  document.getElementById("score").textContent=Math.floor(score/10);
+
+  if(over) {
+    ctx.fillStyle="rgba(0,0,0,.8)";
+    ctx.fillRect(0,0,360,550);
+    ctx.fillStyle="white";
+    ctx.textAlign="center";
+    ctx.font="bold 30px Arial";
+    ctx.fillText("АВАРИЯ!",180,240);
+    ctx.font="20px Arial";
+    ctx.fillText("Очки: "+Math.floor(score/10),180,280);
+    ctx.textAlign="left";
+    return;
+  }
+
+  requestAnimationFrame(loop);
+}
+
+start();
+</script>
+</body>
+</html>
